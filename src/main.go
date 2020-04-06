@@ -11,7 +11,20 @@ func main() {
 	rabbitServer := messaging.NewRabbitMQServer("guest", "guest", "localhost:5672")
 	defer rabbitServer.Close()
 	rabbitServer.Connect()
-	q := rabbitServer.DeclareQueue("hello")
-	publisher := messaging.NewPublisher(rabbitServer, q)
-	publisher.Publish(publisher.Message("text/plain", []byte("Hello World")))
+
+	publisher := messaging.NewPublisher(rabbitServer, "hello")
+	defer publisher.Stop()
+	go func() {
+		for {
+			publisher.Publish(publisher.Message("text/plain", []byte("Hello World")))
+		}
+	}()
+
+	consumer := messaging.NewConsumer(rabbitServer, "hello")
+	defer consumer.Stop()
+	go func() {
+		consumer.Consume()
+	}()
+	var a string
+	fmt.Scanln(&a)
 }
